@@ -1,0 +1,196 @@
+import { StyleSheet } from 'react-native';
+import { Colors } from '../../../constants/colors';
+
+const tabStyles = StyleSheet.create({
+  // Hotel Details
+  heroCardCompact: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    backgroundColor: '#fff', borderRadius: 24, padding: 18, marginBottom: 24,
+    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
+  },
+  heroIconWrapCompact: {
+    width: 56, height: 56, borderRadius: 18, backgroundColor: '#F3F4FB',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  heroTitleCompact: { fontSize: 20, fontWeight: '900', color: Colors.heading, marginBottom: 4 },
+  statusBadgeSmallCompact: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#ECFDF5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  statusTextSmall: { fontSize: 9, fontWeight: '900', color: '#059669', letterSpacing: 1 },
+  statusBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#ECFDF5', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99,
+  },
+  statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#059669' },
+  statusText: { fontSize: 12, fontWeight: '700', color: '#059669' },
+  infoRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 10,
+    elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4,
+  },
+  infoIconWrap: {
+    width: 38, height: 38, borderRadius: 11, backgroundColor: '#EDE9FE',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  infoLabel: { fontSize: 11, fontWeight: '700', color: Colors.body, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  infoValue: { fontSize: 14, fontWeight: '600', color: Colors.heading },
+  sectionTitle: {
+    fontSize: 12, fontWeight: '800', color: Colors.body,
+    marginBottom: 12, marginTop: 10, letterSpacing: 1.5,
+    textTransform: 'uppercase', paddingLeft: 4,
+  },
+  ownerCard: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 24,
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 10,
+  },
+  ownerHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
+  ownerAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#F3F4F6' },
+  ownerName: { fontSize: 18, fontWeight: '900', color: Colors.heading, marginBottom: 4 },
+  ownerDesignation: { fontSize: 12, fontWeight: '600', color: '#6366F1' },
+  contactGrid: { flexDirection: 'row', gap: 12 },
+  contactItem: {
+    flex: 1, backgroundColor: '#F9FAFB', borderRadius: 16,
+    paddingVertical: 12, alignItems: 'center', gap: 6,
+    borderWidth: 1, borderColor: '#F3F4F6',
+  },
+  contactIconWrap: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  contactText: { fontSize: 11, fontWeight: '700', color: Colors.body },
+
+  // Verification
+  verifyTitle: { fontSize: 22, fontWeight: '900', color: Colors.heading, marginBottom: 6 },
+  verifySubtitle: { fontSize: 14, color: Colors.body, marginBottom: 24, lineHeight: 20 },
+  choiceCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    backgroundColor: '#fff', borderRadius: 20, padding: 20, marginBottom: 14,
+    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
+  },
+  choiceIconWrap: { width: 54, height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  choiceTitle: { fontSize: 16, fontWeight: '800', color: Colors.heading, marginBottom: 4 },
+  choiceDesc: { fontSize: 12, color: Colors.body, lineHeight: 16 },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 24 },
+  backRowText: { fontSize: 15, fontWeight: '800', color: Colors.accent },
+  fieldLabel: {
+    fontSize: 10, fontWeight: '800', letterSpacing: 2, color: '#9CA3AF',
+    marginBottom: 8, marginLeft: 4, textTransform: 'uppercase',
+  },
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F9FAFB', borderRadius: 14,
+    borderWidth: 1.5, borderColor: '#E5E7EB',
+    paddingHorizontal: 14, height: 54, marginBottom: 20,
+  },
+  inputRowFocused: { borderColor: Colors.accent, backgroundColor: '#FDFBFF' },
+  input: { flex: 1, fontSize: 15, color: Colors.heading, fontWeight: '500' },
+  idChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 10, borderWidth: 1.5, borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+  },
+  idChipActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  idChipText: { fontSize: 12, fontWeight: '700', color: Colors.body },
+  idChipTextActive: { color: '#fff' },
+  idHint: { fontSize: 11, color: Colors.body, marginTop: 4, marginLeft: 4, fontStyle: 'italic' },
+  countCard: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 20, marginBottom: 16,
+    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
+  },
+  countCardTitle: { fontSize: 14, fontWeight: '800', color: Colors.heading, marginBottom: 16 },
+  countRow: {
+    flexDirection: 'row', alignItems: 'center',
+    marginBottom: 16, paddingBottom: 16,
+    borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  },
+  countLabel: { fontSize: 14, fontWeight: '700', color: Colors.heading },
+  countHint: { fontSize: 11, color: Colors.body, marginTop: 2 },
+  counter: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F3F4FB', borderRadius: 12, padding: 4, gap: 4,
+  },
+  counterBtn: {
+    width: 34, height: 34, borderRadius: 10, backgroundColor: '#EDE9FE',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  counterVal: { fontSize: 17, fontWeight: '900', color: Colors.heading, minWidth: 32, textAlign: 'center' },
+  summaryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#EDE9FE', borderRadius: 14, padding: 14,
+    marginBottom: 20, borderWidth: 1, borderColor: '#DDD6FE',
+  },
+  summaryChipText: { fontSize: 13, fontWeight: '600', color: Colors.accent, flex: 1 },
+  submitBtn: {
+    height: 56, borderRadius: 16, backgroundColor: Colors.accent,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    elevation: 2,
+  },
+  submitBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  doneWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
+  doneIcon: {
+    width: 100, height: 100, borderRadius: 28, backgroundColor: '#D1FAE5',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+  },
+  doneTitle: { fontSize: 22, fontWeight: '900', color: Colors.heading, marginBottom: 10, textAlign: 'center' },
+  doneBody: { fontSize: 14, color: Colors.body, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  newVerifyBtn: {
+    height: 52, borderRadius: 14, backgroundColor: Colors.accent,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 28,
+  },
+  newVerifyBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+
+  // History
+  statRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  statCard: { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center' },
+  statNum: { fontSize: 22, fontWeight: '900' },
+  statLabel: { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  historyCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 10,
+    elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4,
+  },
+  historyTypeWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  historyName: { fontSize: 14, fontWeight: '800', color: Colors.heading },
+  historyTypeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  historyTypeBadgeText: { fontSize: 10, fontWeight: '800' },
+  historyMeta: { fontSize: 12, color: Colors.body, marginTop: 3 },
+  historyStatus: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+
+  // Subscription
+  planCard: {
+    borderRadius: 28, backgroundColor: Colors.accent,
+    padding: 28, marginBottom: 20, overflow: 'hidden',
+  },
+  planLabel: {
+    alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4,
+    borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
+  },
+  planLabelText: { color: '#fff', fontSize: 11, fontWeight: '900', letterSpacing: 2 },
+  planPrice: { color: '#fff', fontSize: 40, fontWeight: '900', letterSpacing: -1 },
+  planPriceSub: { color: 'rgba(255,255,255,0.7)', fontSize: 15, marginTop: 4 },
+  planBadge: {
+    marginTop: 16, alignSelf: 'flex-start',
+    paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  planBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Validity Timer
+  timerCard: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 24,
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 10,
+  },
+  timerRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
+  timerIconWrap: {
+    width: 50, height: 50, borderRadius: 15, backgroundColor: '#EDE9FE',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  timerValue: { fontSize: 22, fontWeight: '900', color: Colors.heading },
+  timerSub: { fontSize: 12, color: Colors.body, marginTop: 2 },
+  progressContainer: { marginTop: 10 },
+  progressTrack: { height: 8, backgroundColor: '#F3F4FB', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
+  progressBar: { height: '100%', backgroundColor: Colors.accent, borderRadius: 4 },
+  progressLabel: { fontSize: 11, fontWeight: '700', color: Colors.body, letterSpacing: 0.5 },
+});
+
+export default tabStyles;
