@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,49 +6,72 @@ import {
   TouchableOpacity,
   StatusBar,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
 import HotelCard, { Hotel } from '../components/hotels/HotelCard';
-import AddManagerModal, { ManagerData } from '../components/hotels/AddManagerModal';
-
-// Demo seed data (will be replaced by real API data in production)
-const SEED_HOTELS: Hotel[] = [
-  {
-    id: '1',
-    name: 'The Grand Palace',
-    address: 'MG Road, Near Raj Bhawan',
-    district: 'Jaipur',
-    state: 'Rajasthan',
-    pincode: '302001',
-    postOffice: 'Jaipur GPO',
-    managersCount: 0,
-  },
-];
+import AddManagerModal from '../components/hotels/AddManagerModal';
+import { ownerProfile, addManagerToHotel } from '../services/api';
 
 export default function HotelsScreen() {
   const router = useRouter();
-  const [hotels, setHotels] = useState<Hotel[]>(SEED_HOTELS);
+  const { logout } = useAuth();
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [ownerName, setOwnerName] = useState('');
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [showAddManager, setShowAddManager] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchHotels = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await ownerProfile();
+      const owner = res.owner;
+      setOwnerName(owner.name || '');
+      const mapped: Hotel[] = (owner.hotels || []).map((h: any) => ({
+        id: h.id,
+        name: h.name,
+        address: h.address,
+        district: h.city || h.district?.name || '',
+        state: h.state || '',
+        pincode: h.pincode || '',
+        postOffice: '',
+        managersCount: h.managers?.length || 0,
+        status: h.status,
+        managers: h.managers || [],
+        subscriptions: h.subscriptions || [],
+      }));
+      setHotels(mapped);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to load hotels');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHotels();
+  }, [fetchHotels]);
 
   const handleAddManager = (hotel: Hotel) => {
     setSelectedHotel(hotel);
     setShowAddManager(true);
   };
 
-  const handleManagerAdded = (hotelId: string, manager: ManagerData) => {
-    setHotels((prev) =>
-      prev.map((h) =>
-        h.id === hotelId
-          ? { ...h, managersCount: (h.managersCount ?? 0) + 1 }
-          : h
-      )
-    );
-    setShowAddManager(false);
-    console.log('Manager added:', manager);
+  const handleManagerAdded = async (hotelId: string, manager: { name: string; phone: string }) => {
+    try {
+      const fullPhone = manager.phone.startsWith('+91') ? manager.phone : `+91${manager.phone.replace(/\D/g, '')}`;
+      await addManagerToHotel(hotelId, manager.name, fullPhone);
+      setShowAddManager(false);
+      fetchHotels(); // Refresh list
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to add manager');
+    }
   };
 
   const renderHeader = () => (
@@ -80,42 +103,67 @@ export default function HotelsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.bgPrimary} />
 
-      {/* ── Top Bar ── */}
+      {/* Top Bar */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.greeting}>Welcome Back 👋</Text>
+          <Text style={styles.greeting}>Welcome Back{ownerName ? `, ${ownerName.split(' ')[0]}` : ''} </Text>
           <Text style={styles.pageTitle}>Hotel Dashboard</Text>
         </View>
-        <View style={styles.avatar}>
-          <Ionicons name="finger-print" size={22} color="#fff" />
-        </View>
+        <TouchableOpacity
+          style={styles.avatar}
+          onPress={() => {
+            logout();
+            router.replace('/');
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="log-out-outline" size={22} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={hotels}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <HotelCard
-            hotel={item}
-            onAddManager={handleAddManager}
-            onPress={() => router.push({ pathname: '/hotel-detail', params: { hotelId: item.id, hotelName: item.name, address: item.address, district: item.district, state: item.state, pincode: item.pincode, postOffice: item.postOffice, managersCount: String(item.managersCount ?? 0) } })}
-          />
-        )}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="business-outline" size={36} color={Colors.body} />
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      ) : (
+        <FlatList
+          data={hotels}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <HotelCard
+              hotel={item}
+              onAddManager={handleAddManager}
+              onPress={() => router.push({
+                pathname: '/hotel-detail',
+                params: {
+                  hotelId: item.id,
+                  hotelName: item.name,
+                  address: item.address,
+                  district: item.district,
+                  state: item.state,
+                  pincode: item.pincode,
+                  postOffice: item.postOffice,
+                  managersCount: String(item.managersCount ?? 0),
+                },
+              })}
+            />
+          )}
+          ListHeaderComponent={renderHeader}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="business-outline" size={36} color={Colors.body} />
+              </View>
+              <Text style={styles.emptyTitle}>No properties yet</Text>
+              <Text style={styles.emptySubtitle}>Your registered hotels will appear here.</Text>
             </View>
-            <Text style={styles.emptyTitle}>No properties yet</Text>
-            <Text style={styles.emptySubtitle}>Your registered hotels will appear here.</Text>
-          </View>
-        }
-      />
+          }
+        />
+      )}
 
-      {/* ── Add Hotel FAB ── */}
+      {/* Add Hotel FAB */}
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.85}
@@ -125,7 +173,7 @@ export default function HotelsScreen() {
         <Text style={styles.fabText}>Add Hotel</Text>
       </TouchableOpacity>
 
-      {/* ── Add Manager Modal ── */}
+      {/* Add Manager Modal */}
       <AddManagerModal
         visible={showAddManager}
         hotel={selectedHotel}
@@ -177,7 +225,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 110, // allow FAB space
+    paddingBottom: 110,
   },
   statsRow: {
     flexDirection: 'row',

@@ -219,6 +219,12 @@ const tabStyles = StyleSheet.create({
   modalTitle: { fontSize: 20, fontWeight: '900', color: Colors.heading },
   guestLabel: { fontSize: 13, fontWeight: '900', color: Colors.heading, marginBottom: 12, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
   closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+
+  // Empty states
+  emptyWrap: { alignItems: 'center', paddingTop: 40 },
+  emptyIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  emptyTitle: { fontSize: 16, fontWeight: '800', color: Colors.heading, marginBottom: 6 },
+  emptyBody: { fontSize: 13, color: Colors.body, textAlign: 'center', lineHeight: 20, paddingHorizontal: 16 },
 });
 
 export default tabStyles;

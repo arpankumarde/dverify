@@ -9,31 +9,72 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
+import {
+  ownerLogin,
+  ownerVerifyOtp,
+  managerLogin,
+  managerVerifyOtp,
+} from '../services/api';
+
+type LoginStep = 'phone' | 'otp';
+type Role = 'owner' | 'manager';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
+
+  const [step, setStep] = useState<LoginStep>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [role, setRole] = useState<Role>('manager');
   const [phoneFocused, setPhoneFocused] = useState(false);
   const [otpFocused, setOtpFocused] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [otpHint, setOtpHint] = useState('');
 
-  const canLogin = phone.trim().length === 10 && otp.trim().length === 4;
+  const canSendOtp = phone.trim().length === 10;
+  const canVerify = otp.trim().length === 6;
 
-  const handleLogin = () => {
-    if (canLogin) {
-      if (phone === '9999999999' && otp === '1234') {
-        router.replace('/hotels');
-      } else if (phone === '8888888888' && otp === '5678') {
-        router.replace('/manager-dashboard');
-      } else {
-        setError('Invalid Phone Number or OTP');
-      }
+  const handleSendOtp = async () => {
+    if (!canSendOtp) return;
+    setError('');
+    setLoading(true);
+    try {
+      const fullPhone = `+91${phone.trim()}`;
+      const loginFn = role === 'owner' ? ownerLogin : managerLogin;
+      const res = await loginFn(fullPhone);
+      // Backend returns OTP in dev mode
+      setOtpHint(res.otp || '');
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!canVerify) return;
+    setError('');
+    setLoading(true);
+    try {
+      const fullPhone = `+91${phone.trim()}`;
+      const verifyFn = role === 'owner' ? ownerVerifyOtp : managerVerifyOtp;
+      const res = await verifyFn(fullPhone, otp.trim());
+      login(res.token, role);
+      router.replace(role === 'owner' ? '/hotels' : '/manager-dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired OTP');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,102 +90,169 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Back ── */}
+          {/* Back */}
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (step === 'otp') {
+                setStep('phone');
+                setOtp('');
+                setError('');
+                setOtpHint('');
+              } else {
+                router.back();
+              }
+            }}
             style={styles.backBtn}
             activeOpacity={0.7}
           >
             <Ionicons name="arrow-back" size={20} color={Colors.heading} />
           </TouchableOpacity>
 
-          {/* ── Header ── */}
+          {/* Header */}
           <View style={styles.headerBlock}>
             <View style={styles.logoWrap}>
               <Ionicons name="finger-print" size={26} color="#fff" />
             </View>
             <Text style={styles.welcomeLabel}>WELCOME BACK</Text>
-            <Text style={styles.heading}>Sign in to{'\n'}your account</Text>
+            <Text style={styles.heading}>
+              {step === 'phone' ? 'Sign in to\nyour account' : 'Verify\nOTP'}
+            </Text>
             <Text style={styles.subheading}>
-              Enter your mobile number and the OTP sent to you.
+              {step === 'phone'
+                ? 'Select your role and enter your mobile number.'
+                : `Enter the 6-digit OTP sent to +91 ${phone}.`}
             </Text>
           </View>
 
-          {/* ── Form card ── */}
+          {/* Form card */}
           <View style={styles.card}>
-            {/* Phone */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>MOBILE NUMBER</Text>
-              <View style={[styles.inputRow, phoneFocused && styles.inputRowFocused]}>
-                <Ionicons
-                  name="call-outline"
-                  size={18}
-                  color={phoneFocused ? Colors.accent : '#9CA3AF'}
-                  style={styles.inputIcon}
-                />
-                <Text style={styles.prefix}>+91 </Text>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="XXXXX XXXXX"
-                  placeholderTextColor="#C4C9D4"
-                  value={phone}
-                  onChangeText={(t) => {
-                    setError('');
-                    setPhone(t.replace(/\D/g, '').slice(0, 10));
-                  }}
-                  onFocus={() => setPhoneFocused(true)}
-                  onBlur={() => setPhoneFocused(false)}
-                  keyboardType="phone-pad"
-                />
-              </View>
-            </View>
+            {step === 'phone' ? (
+              <>
+                {/* Role Selector */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>LOGIN AS</Text>
+                  <View style={styles.roleRow}>
+                    {(['manager', 'owner'] as Role[]).map((r) => (
+                      <TouchableOpacity
+                        key={r}
+                        style={[styles.roleBtn, role === r && styles.roleBtnActive]}
+                        onPress={() => { setRole(r); setError(''); }}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons
+                          name={r === 'owner' ? 'business' : 'people'}
+                          size={16}
+                          color={role === r ? '#fff' : Colors.body}
+                        />
+                        <Text style={[styles.roleBtnText, role === r && styles.roleBtnTextActive]}>
+                          {r === 'owner' ? 'Owner' : 'Manager'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
 
-            {/* OTP */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>OTP DIGITS</Text>
-              <View style={[styles.inputRow, otpFocused && styles.inputRowFocused]}>
-                <Ionicons
-                  name="key-outline"
-                  size={18}
-                  color={otpFocused ? Colors.accent : '#9CA3AF'}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter 4-digit OTP"
-                  placeholderTextColor="#C4C9D4"
-                  value={otp}
-                  onChangeText={(t) => {
-                    setError('');
-                    setOtp(t.replace(/\D/g, '').slice(0, 4));
-                  }}
-                  onFocus={() => setOtpFocused(true)}
-                  onBlur={() => setOtpFocused(false)}
-                  keyboardType="number-pad"
-                  secureTextEntry
-                />
+                {/* Phone */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>MOBILE NUMBER</Text>
+                  <View style={[styles.inputRow, phoneFocused && styles.inputRowFocused]}>
+                    <Ionicons
+                      name="call-outline"
+                      size={18}
+                      color={phoneFocused ? Colors.accent : '#9CA3AF'}
+                      style={styles.inputIcon}
+                    />
+                    <Text style={styles.prefix}>+91 </Text>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder="XXXXX XXXXX"
+                      placeholderTextColor="#C4C9D4"
+                      value={phone}
+                      onChangeText={(t) => {
+                        setError('');
+                        setPhone(t.replace(/\D/g, '').slice(0, 10));
+                      }}
+                      onFocus={() => setPhoneFocused(true)}
+                      onBlur={() => setPhoneFocused(false)}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+                </View>
+              </>
+            ) : (
+              /* OTP */
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>OTP CODE</Text>
+                <View style={[styles.inputRow, otpFocused && styles.inputRowFocused]}>
+                  <Ionicons
+                    name="key-outline"
+                    size={18}
+                    color={otpFocused ? Colors.accent : '#9CA3AF'}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter 6-digit OTP"
+                    placeholderTextColor="#C4C9D4"
+                    value={otp}
+                    onChangeText={(t) => {
+                      setError('');
+                      setOtp(t.replace(/\D/g, '').slice(0, 6));
+                    }}
+                    onFocus={() => setOtpFocused(true)}
+                    onBlur={() => setOtpFocused(false)}
+                    keyboardType="number-pad"
+                    autoFocus
+                  />
+                </View>
               </View>
-            </View>
-            
+            )}
+
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
 
-          {/* ── Login CTA ── */}
-          <TouchableOpacity
-            style={[styles.loginBtn, !canLogin && styles.loginBtnDisabled]}
-            activeOpacity={canLogin ? 0.85 : 1}
-            onPress={handleLogin}
-          >
-            <Text style={styles.loginBtnText}>Login Account</Text>
-            <Ionicons name="log-in-outline" size={20} color="#fff" />
-          </TouchableOpacity>
+          {/* CTA */}
+          {step === 'phone' ? (
+            <TouchableOpacity
+              style={[styles.loginBtn, (!canSendOtp || loading) && styles.loginBtnDisabled]}
+              activeOpacity={canSendOtp && !loading ? 0.85 : 1}
+              onPress={handleSendOtp}
+              disabled={!canSendOtp || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.loginBtnText}>Send OTP</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.loginBtn, (!canVerify || loading) && styles.loginBtnDisabled]}
+              activeOpacity={canVerify && !loading ? 0.85 : 1}
+              onPress={handleVerifyOtp}
+              disabled={!canVerify || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.loginBtnText}>Verify & Login</Text>
+                  <Ionicons name="log-in-outline" size={20} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+          )}
 
-          {/* ── Hint ── */}
-          <View style={styles.hintBox}>
-            <Text style={styles.hintTitle}>Demo Credentials:</Text>
-            <Text style={styles.hintText}>Owner: 9999999999 / 1234</Text>
-            <Text style={styles.hintText}>Manager: 8888888888 / 5678</Text>
-          </View>
+          {/* OTP Hint (dev mode - backend returns OTP) */}
+          {step === 'otp' && otpHint ? (
+            <View style={styles.hintBox}>
+              <Text style={styles.hintTitle}>Dev OTP:</Text>
+              <Text style={styles.hintText}>{otpHint}</Text>
+            </View>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -230,6 +338,34 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginLeft: 4,
   },
+  roleRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  roleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+  },
+  roleBtnActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  roleBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.body,
+  },
+  roleBtnTextActive: {
+    color: '#fff',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -284,20 +420,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
   },
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  registerLabel: {
-    fontSize: 14,
-    color: Colors.body,
-  },
-  registerLink: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.accent,
-  },
   errorText: {
     color: '#EF4444',
     fontSize: 12,
@@ -322,9 +444,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   hintText: {
-    fontSize: 13,
-    color: Colors.body,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 18,
+    color: Colors.accent,
+    fontWeight: '800',
+    letterSpacing: 4,
   },
 });

@@ -7,6 +7,7 @@ import {
   Modal,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
@@ -16,7 +17,7 @@ interface AddManagerModalProps {
   visible: boolean;
   hotel: Hotel | null;
   onClose: () => void;
-  onAdd: (hotelId: string, manager: ManagerData) => void;
+  onAdd: (hotelId: string, manager: { name: string; phone: string }) => void;
 }
 
 export interface ManagerData {
@@ -101,11 +102,19 @@ const AddManagerModal: React.FC<AddManagerModalProps> = ({
 
   const isValid = !!(form.name && form.email && form.mobile);
 
-  const handleSubmit = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
     if (!isValid || !hotel) return;
-    onAdd(hotel.id, form);
-    setForm({ name: '', email: '', mobile: '', designation: '' });
-    onClose();
+    setSubmitting(true);
+    try {
+      await onAdd(hotel.id, { name: form.name, phone: form.mobile });
+      setForm({ name: '', email: '', mobile: '', designation: '' });
+    } catch {
+      // Error handled by parent
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -165,13 +174,19 @@ const AddManagerModal: React.FC<AddManagerModalProps> = ({
           </ScrollView>
 
           <TouchableOpacity
-            style={[styles.submitBtn, !isValid && styles.submitDisabled]}
+            style={[styles.submitBtn, (!isValid || submitting) && styles.submitDisabled]}
             onPress={handleSubmit}
-            disabled={!isValid}
+            disabled={!isValid || submitting}
             activeOpacity={0.85}
           >
-            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-            <Text style={styles.submitText}>Add Manager</Text>
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                <Text style={styles.submitText}>Add Manager</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>

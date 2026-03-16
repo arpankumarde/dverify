@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StatusBar,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
+import { managerProfile } from '../services/api';
 
 // Import Components
-import HotelDetailsTab, { HOTEL } from '../components/manager/HotelDetailsTab';
+import HotelDetailsTab from '../components/manager/HotelDetailsTab';
 import VerificationTab from '../components/manager/VerificationTab';
 import HistoryTab from '../components/manager/HistoryTab';
 import SubscriptionTab from '../components/manager/SubscriptionTab';
@@ -26,32 +29,71 @@ const TABS = [
 
 export default function ManagerDashboard() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('verify');
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await managerProfile();
+      setProfile(res.manager);
+    } catch {
+      // fallback to empty
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const hotelName = profile?.hotel?.name || 'Hotel';
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.bgPrimary} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.bgPrimary} />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerSub}>Manager View</Text>
-          <Text style={styles.headerTitle}>{HOTEL.name}</Text>
+          <Text style={styles.headerTitle}>{hotelName}</Text>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => router.replace('/')} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => {
+            logout();
+            router.replace('/');
+          }}
+          activeOpacity={0.7}
+        >
           <Ionicons name="log-out-outline" size={20} color={Colors.accent} />
         </TouchableOpacity>
       </View>
 
-      {/* ── Tab Content ── */}
+      {/* Tab Content */}
       <View style={{ flex: 1 }}>
         {activeTab === 'verify' && <VerificationTab />}
         {activeTab === 'history' && <HistoryTab />}
-        {activeTab === 'details' && <HotelDetailsTab />}
-        {activeTab === 'subscription' && <SubscriptionTab />}
+        {activeTab === 'details' && <HotelDetailsTab profile={profile} />}
+        {activeTab === 'subscription' && <SubscriptionTab subscription={profile?.hotel?.subscriptions?.[0] || null} />}
       </View>
 
-      {/* ── Bottom Tab Bar ── */}
+      {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;

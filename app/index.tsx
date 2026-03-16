@@ -12,10 +12,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingItem, { Slide } from '../components/OnboardingItem';
 import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
 
 const slides: Slide[] = [
   {
@@ -48,12 +49,17 @@ const slides: Slide[] = [
 ];
 
 export default function Index() {
+  const { isAuthenticated, role } = useAuth();
   const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showChoice, setShowChoice] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatRef = useRef<FlatList>(null);
   const router = useRouter();
+
+  if (isAuthenticated) {
+    return <Redirect href={role === 'manager' ? '/manager-dashboard' : '/hotels'} />;
+  }
 
   const onViewRef = useRef(({ viewableItems }: any) => {
     if (viewableItems[0]) setCurrentIndex(viewableItems[0].index);

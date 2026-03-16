@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StatusBar,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
+import { ownerProfile, getHotelVerifications } from '../services/api';
 
 // Import Components
 import HotelDetailsTab from '../components/owner/HotelDetailsTab';
@@ -28,13 +30,56 @@ export default function HotelDetailScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('details');
-  const managersCount = parseInt(params.managersCount as string ?? '0', 10);
+  const hotelId = params.hotelId as string;
+
+  const [hotel, setHotel] = useState<any>(null);
+  const [managers, setManagers] = useState<any[]>([]);
+  const [verifications, setVerifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Fetch owner profile to get hotel with managers
+      const profileRes = await ownerProfile();
+      const foundHotel = profileRes.owner.hotels?.find((h: any) => h.id === hotelId);
+      if (foundHotel) {
+        setHotel(foundHotel);
+        setManagers(foundHotel.managers || []);
+      }
+
+      // Fetch verifications for this hotel
+      const verifRes = await getHotelVerifications(hotelId);
+      setVerifications(verifRes.verifications || []);
+    } catch {
+      // Use params as fallback
+    } finally {
+      setLoading(false);
+    }
+  }, [hotelId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const hotelName = hotel?.name || (params.hotelName as string) || '';
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.bgPrimary} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.bgPrimary} />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -45,22 +90,22 @@ export default function HotelDetailScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerSub}>Hotel</Text>
-          <Text style={styles.headerTitle} numberOfLines={1}>{params.hotelName as string}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{hotelName}</Text>
         </View>
         <View style={styles.headerIcon}>
           <Ionicons name="finger-print" size={20} color="#fff" />
         </View>
       </View>
 
-      {/* ── Tab Content ── */}
+      {/* Tab Content */}
       <View style={{ flex: 1 }}>
         {activeTab === 'details' && <HotelDetailsTab params={params} />}
-        {activeTab === 'managers' && <ManagersTab managersCount={managersCount} />}
-        {activeTab === 'logs' && <LogsTab />}
-        {activeTab === 'subscription' && <SubscriptionTab />}
+        {activeTab === 'managers' && <ManagersTab managers={managers} />}
+        {activeTab === 'logs' && <LogsTab verifications={verifications} />}
+        {activeTab === 'subscription' && <SubscriptionTab subscription={hotel?.subscriptions?.[0] || null} />}
       </View>
 
-      {/* ── Bottom Tab Bar ── */}
+      {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;

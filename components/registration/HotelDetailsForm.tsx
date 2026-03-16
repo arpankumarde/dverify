@@ -1,15 +1,28 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { getDistricts } from '../../services/api';
+
+const INDIAN_STATES = [
+  'ANDHRA PRADESH', 'ARUNACHAL PRADESH', 'ASSAM', 'BIHAR', 'CHHATTISGARH',
+  'GOA', 'GUJARAT', 'HARYANA', 'HIMACHAL PRADESH', 'JHARKHAND',
+  'KARNATAKA', 'KERALA', 'MADHYA PRADESH', 'MAHARASHTRA', 'MANIPUR',
+  'MEGHALAYA', 'MIZORAM', 'NAGALAND', 'ODISHA', 'PUNJAB',
+  'RAJASTHAN', 'SIKKIM', 'TAMIL NADU', 'TELANGANA', 'TRIPURA',
+  'UTTAR PRADESH', 'UTTARAKHAND', 'WEST BENGAL',
+  'ANDAMAN AND NICOBAR ISLANDS', 'CHANDIGARH', 'DADRA AND NAGAR HAVELI AND DAMAN AND DIU',
+  'DELHI', 'JAMMU AND KASHMIR', 'LADAKH', 'LAKSHADWEEP', 'PUDUCHERRY',
+];
 
 interface FormData {
   hotelName: string;
   address: string;
   pincode: string;
-  postOffice: string;
-  district: string;
+  city: string;
   state: string;
+  districtId: string;
+  districtName: string;
 }
 
 interface Props {
@@ -25,7 +38,6 @@ const Field = ({
   onChange,
   keyboardType = 'default',
   multiline = false,
-  editable = true,
 }: {
   icon: string;
   label: string;
@@ -34,7 +46,6 @@ const Field = ({
   onChange?: (v: string) => void;
   keyboardType?: any;
   multiline?: boolean;
-  editable?: boolean;
 }) => (
   <View style={{ marginBottom: 16 }}>
     <Text style={{ fontSize: 11, fontWeight: '800', color: Colors.body, letterSpacing: 1.5, marginBottom: 8, textTransform: 'uppercase' }}>
@@ -48,9 +59,9 @@ const Field = ({
         paddingHorizontal: 16,
         paddingVertical: multiline ? 14 : 0,
         borderRadius: 14,
-        backgroundColor: '#F4F0FF', // Lilac background
+        backgroundColor: '#F4F0FF',
         borderWidth: 1.5,
-        borderColor: '#DDD6FE',    // Lilac border
+        borderColor: '#DDD6FE',
       }}
     >
       <Ionicons name={icon as any} size={19} color={Colors.mintIcon} style={{ marginTop: multiline ? 2 : 0 }} />
@@ -62,16 +73,14 @@ const Field = ({
         keyboardType={keyboardType}
         multiline={multiline}
         numberOfLines={multiline ? 3 : 1}
-        editable={editable}
         selectionColor={Colors.mintIcon}
         style={{
           flex: 1,
           marginLeft: 12,
           fontSize: 15,
-          color: Colors.heading, // Always heading color
+          color: Colors.heading,
           textAlignVertical: multiline ? 'top' : 'center',
           paddingVertical: multiline ? 8 : 0,
-          opacity: editable ? 1 : 0.8, // Subtle hint that it's disabled but same colors
         }}
       />
     </View>
@@ -79,62 +88,50 @@ const Field = ({
 );
 
 const HotelDetailsForm: React.FC<Props> = ({ data, onChange }) => {
-  const [loading, setLoading] = React.useState(false);
-  const [postOffices, setPostOffices] = React.useState<any[]>([]);
-  const [showPOList, setShowPOList] = React.useState(false);
+  const [showStateList, setShowStateList] = useState(false);
+  const [stateSearch, setStateSearch] = useState('');
+  const [showDistrictList, setShowDistrictList] = useState(false);
+  const [districts, setDistricts] = useState<Array<{ id: string; name: string; state: string }>>([]);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
 
-  const fetchPincodeDetails = async (pin: string) => {
-    if (pin.length !== 6) return;
-    
-    setLoading(true);
-    try {
-      const baseUrl = process.env.EXPO_PUBLIC_PINCODE_API_KEY?.replace(/"/g, '').trim() || "https://api.postalpincode.in/pincode";
-      const response = await fetch(`${baseUrl}/${pin}`);
-      const result = await response.json();
-
-      if (result[0].Status === "Success") {
-        const offices = result[0].PostOffice;
-        setPostOffices(offices);
-        
-        if (offices.length === 1) {
-          onChange('postOffice', offices[0].Name);
-          onChange('district', offices[0].District);
-          onChange('state', offices[0].State);
-          setShowPOList(false);
-        } else {
-          setShowPOList(true);
-        }
-      } else {
-        setPostOffices([]);
-        alert("Invalid Pincode");
-        setShowPOList(false);
+  // Fetch districts when state changes
+  useEffect(() => {
+    if (!data.state) {
+      setDistricts([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoadingDistricts(true);
+      try {
+        const res = await getDistricts(data.state);
+        if (!cancelled) setDistricts(res.districts || []);
+      } catch {
+        if (!cancelled) setDistricts([]);
+      } finally {
+        if (!cancelled) setLoadingDistricts(false);
       }
-    } catch (error) {
-      console.error("Error fetching pincode:", error);
-    } finally {
-      setLoading(false);
-    }
+    })();
+    return () => { cancelled = true; };
+  }, [data.state]);
+
+  const filteredStates = stateSearch
+    ? INDIAN_STATES.filter(s => s.includes(stateSearch.toUpperCase()))
+    : INDIAN_STATES;
+
+  const selectState = (state: string) => {
+    onChange('state', state);
+    // Clear district when state changes
+    onChange('districtId', '');
+    onChange('districtName', '');
+    setShowStateList(false);
+    setStateSearch('');
   };
 
-  const handlePincodeChange = (val: string) => {
-    onChange('pincode', val);
-    if (val.length === 6) {
-      fetchPincodeDetails(val);
-    } else {
-      setPostOffices([]);
-      setShowPOList(false);
-      // Clear auto-filled fields if pincode is deleted/changed
-      onChange('postOffice', '');
-      onChange('district', '');
-      onChange('state', '');
-    }
-  };
-
-  const selectPostOffice = (po: any) => {
-    onChange('postOffice', po.Name);
-    onChange('district', po.District);
-    onChange('state', po.State);
-    setShowPOList(false);
+  const selectDistrict = (d: { id: string; name: string }) => {
+    onChange('districtId', d.id);
+    onChange('districtName', d.name);
+    setShowDistrictList(false);
   };
 
   return (
@@ -142,23 +139,15 @@ const HotelDetailsForm: React.FC<Props> = ({ data, onChange }) => {
       {/* Section Banner */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: 14,
-          borderRadius: 16,
-          backgroundColor: Colors.mint,
-          marginBottom: 20,
+          flexDirection: 'row', alignItems: 'center', padding: 14,
+          borderRadius: 16, backgroundColor: Colors.mint, marginBottom: 20,
         }}
       >
         <View
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 12,
+            width: 38, height: 38, borderRadius: 12,
             backgroundColor: Colors.mintIcon + '25',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 12,
+            alignItems: 'center', justifyContent: 'center', marginRight: 12,
           }}
         >
           <Ionicons name="business" size={18} color={Colors.mintIcon} />
@@ -169,128 +158,172 @@ const HotelDetailsForm: React.FC<Props> = ({ data, onChange }) => {
         </View>
       </View>
 
-      <Field 
-        icon="business-outline" 
-        label="Hotel / Property Name" 
+      <Field
+        icon="business-outline"
+        label="Hotel / Property Name"
         placeholder="e.g. The Grand Palace"
-        value={data.hotelName} 
-        onChange={(v) => onChange('hotelName', v)} 
+        value={data.hotelName}
+        onChange={(v) => onChange('hotelName', v)}
       />
 
-      <Field 
-        icon="location-outline" 
-        label="Full Address / Landmark" 
+      <Field
+        icon="location-outline"
+        label="Full Address / Landmark"
         placeholder="Street, Area, Locality"
-        value={data.address} 
-        onChange={(v) => onChange('address', v)} 
-        multiline 
+        value={data.address}
+        onChange={(v) => onChange('address', v)}
+        multiline
       />
 
-      <Field 
-        icon="pin-outline" 
-        label="Pincode" 
-        placeholder="6-digit Pincode"
-        value={data.pincode} 
-        onChange={handlePincodeChange} 
-        keyboardType="number-pad" 
+      <Field
+        icon="home-outline"
+        label="City / Town"
+        placeholder="e.g. Jaipur"
+        value={data.city}
+        onChange={(v) => onChange('city', v)}
       />
 
-      {loading && (
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 12, color: Colors.mintIcon }}>Fetching post office details...</Text>
-        </View>
-      )}
+      <Field
+        icon="pin-outline"
+        label="Pincode"
+        placeholder="6-digit Pincode (optional)"
+        value={data.pincode}
+        onChange={(v) => onChange('pincode', v.replace(/\D/g, '').slice(0, 6))}
+        keyboardType="number-pad"
+      />
 
-      {/* Post Office Dropdown List (Enabled only when list available) */}
+      {/* ── State Selector ── */}
       <View style={{ marginBottom: 16 }}>
         <Text style={{ fontSize: 11, fontWeight: '800', color: Colors.body, letterSpacing: 1.5, marginBottom: 8, textTransform: 'uppercase' }}>
-          Post Office
+          State
         </Text>
         <TouchableOpacity
-          disabled={postOffices.length <= 1}
-          onPress={() => setShowPOList(!showPOList)}
+          onPress={() => { setShowStateList(!showStateList); setShowDistrictList(false); }}
           style={{
-            minHeight: 52,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 16,
-            borderRadius: 14,
-            backgroundColor: postOffices.length > 1 ? '#F4F0FF' : '#F3F4F6',
-            borderWidth: 1.5,
-            borderColor: postOffices.length > 1 ? '#DDD6FE' : '#E5E7EB',
+            minHeight: 52, flexDirection: 'row', alignItems: 'center',
+            paddingHorizontal: 16, borderRadius: 14,
+            backgroundColor: '#F4F0FF', borderWidth: 1.5, borderColor: '#DDD6FE',
           }}
         >
-          <Ionicons name="mail-outline" size={19} color={postOffices.length > 1 ? Colors.mintIcon : '#9CA3AF'} />
-          <Text 
-            style={{ 
-              flex: 1, 
-              marginLeft: 12, 
-              fontSize: 15, 
-              color: data.postOffice ? Colors.heading : '#9CA3AF' 
-            }}
-          >
-            {data.postOffice || (postOffices.length > 1 ? "Select Post Office" : "Auto-filled after Pincode")}
+          <Ionicons name="earth-outline" size={19} color={Colors.mintIcon} />
+          <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, color: data.state ? Colors.heading : '#9CA3AF' }}>
+            {data.state || 'Select State'}
           </Text>
-          {postOffices.length > 1 && (
-            <Ionicons name={showPOList ? "chevron-up" : "chevron-down"} size={18} color={Colors.mintIcon} />
-          )}
+          <Ionicons name={showStateList ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.mintIcon} />
         </TouchableOpacity>
 
-        {showPOList && postOffices.length > 1 && (
-          <View 
-            style={{ 
-              marginTop: 8, 
-              backgroundColor: '#FFFFFF', 
-              borderRadius: 14, 
-              padding: 8, 
-              borderWidth: 1.5, 
-              borderColor: '#DDD6FE',
-              elevation: 4,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-            }}
-          >
-            {postOffices.map((po, idx) => (
-              <TouchableOpacity 
-                key={idx} 
-                onPress={() => selectPostOffice(po)}
-                style={{ 
-                  paddingVertical: 12, 
-                  paddingHorizontal: 8,
-                  borderBottomWidth: idx === postOffices.length - 1 ? 0 : 1, 
-                  borderBottomColor: '#F4F0FF' 
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.heading }}>{po.Name}</Text>
-              </TouchableOpacity>
-            ))}
+        {showStateList && (
+          <View style={{
+            marginTop: 8, backgroundColor: '#fff', borderRadius: 14,
+            borderWidth: 1.5, borderColor: '#DDD6FE', elevation: 4,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1, shadowRadius: 4, maxHeight: 260,
+          }}>
+            {/* Search */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#F4F0FF',
+            }}>
+              <Ionicons name="search-outline" size={16} color="#9CA3AF" />
+              <TextInput
+                placeholder="Search state..."
+                placeholderTextColor="#9CA3AF"
+                value={stateSearch}
+                onChangeText={setStateSearch}
+                style={{ flex: 1, marginLeft: 8, fontSize: 14, color: Colors.heading, paddingVertical: 12 }}
+                autoFocus
+              />
+            </View>
+            <ScrollView nestedScrollEnabled style={{ maxHeight: 210 }} keyboardShouldPersistTaps="handled">
+              {filteredStates.map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  onPress={() => selectState(s)}
+                  style={{
+                    paddingVertical: 12, paddingHorizontal: 16,
+                    borderBottomWidth: 1, borderBottomColor: '#F9FAFB',
+                    backgroundColor: data.state === s ? '#EDE9FE' : '#fff',
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: data.state === s ? '800' : '500', color: Colors.heading }}>
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {filteredStates.length === 0 && (
+                <Text style={{ padding: 16, fontSize: 13, color: Colors.body, textAlign: 'center' }}>
+                  No states found
+                </Text>
+              )}
+            </ScrollView>
           </View>
         )}
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <Field 
-            icon="map-outline" 
-            label="District" 
-            placeholder="District"
-            value={data.district} 
-            editable={false} 
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Field 
-            icon="location-outline" 
-            label="State" 
-            placeholder="State"
-            value={data.state} 
-            editable={false} 
-          />
-        </View>
-      </View>
+      {/* ── District Selector ── */}
+      <View style={{ marginBottom: 16 }}>
+        <Text style={{ fontSize: 11, fontWeight: '800', color: Colors.body, letterSpacing: 1.5, marginBottom: 8, textTransform: 'uppercase' }}>
+          District
+        </Text>
+        <TouchableOpacity
+          disabled={!data.state || loadingDistricts}
+          onPress={() => { setShowDistrictList(!showDistrictList); setShowStateList(false); }}
+          style={{
+            minHeight: 52, flexDirection: 'row', alignItems: 'center',
+            paddingHorizontal: 16, borderRadius: 14,
+            backgroundColor: data.state ? '#F4F0FF' : '#F3F4F6',
+            borderWidth: 1.5, borderColor: data.state ? '#DDD6FE' : '#E5E7EB',
+          }}
+        >
+          <Ionicons name="map-outline" size={19} color={data.state ? Colors.mintIcon : '#9CA3AF'} />
+          <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, color: data.districtName ? Colors.heading : '#9CA3AF' }}>
+            {loadingDistricts ? 'Loading districts...' : data.districtName || (data.state ? 'Select District' : 'Select state first')}
+          </Text>
+          {loadingDistricts ? (
+            <ActivityIndicator size="small" color={Colors.mintIcon} />
+          ) : data.state ? (
+            <Ionicons name={showDistrictList ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.mintIcon} />
+          ) : null}
+        </TouchableOpacity>
 
+        {showDistrictList && districts.length > 0 && (
+          <View style={{
+            marginTop: 8, backgroundColor: '#fff', borderRadius: 14,
+            borderWidth: 1.5, borderColor: '#DDD6FE', elevation: 4,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1, shadowRadius: 4, maxHeight: 220,
+          }}>
+            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+              {districts.map((d) => (
+                <TouchableOpacity
+                  key={d.id}
+                  onPress={() => selectDistrict(d)}
+                  style={{
+                    paddingVertical: 12, paddingHorizontal: 16,
+                    borderBottomWidth: 1, borderBottomColor: '#F9FAFB',
+                    backgroundColor: data.districtId === d.id ? '#EDE9FE' : '#fff',
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: data.districtId === d.id ? '800' : '500', color: Colors.heading }}>
+                    {d.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {showDistrictList && !loadingDistricts && districts.length === 0 && data.state && (
+          <View style={{
+            marginTop: 8, backgroundColor: '#fff', borderRadius: 14, padding: 16,
+            borderWidth: 1.5, borderColor: '#DDD6FE',
+          }}>
+            <Text style={{ fontSize: 13, color: Colors.body, textAlign: 'center' }}>
+              No districts found for {data.state}
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
