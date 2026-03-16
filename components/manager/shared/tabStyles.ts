@@ -191,6 +191,34 @@ const tabStyles = StyleSheet.create({
   progressTrack: { height: 8, backgroundColor: '#F3F4FB', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
   progressBar: { height: '100%', backgroundColor: Colors.accent, borderRadius: 4 },
   progressLabel: { fontSize: 11, fontWeight: '700', color: Colors.body, letterSpacing: 0.5 },
+  
+  // Detail Modal & Cards
+  detailCard: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '100%',
+    borderWidth: 1, borderColor: '#F3F4F6', marginBottom: 24,
+    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
+  },
+  detailRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F9FAFB',
+  },
+  detailIconWrap: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  detailLabel: { fontSize: 10, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+  detailValue: { fontSize: 15, fontWeight: '700', color: Colors.heading },
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#fff', borderRadius: 32, padding: 28,
+    elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 15,
+  },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: Colors.heading },
+  guestLabel: { fontSize: 13, fontWeight: '900', color: Colors.heading, marginBottom: 12, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
 });
 
 export default tabStyles;

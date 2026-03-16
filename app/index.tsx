@@ -84,7 +84,7 @@ export default function Index() {
             <Ionicons name="finger-print" size={18} color="#fff" />
           </View>
           <Text className="text-base font-black tracking-widest" style={{ color: Colors.heading }}>
-            pehchan
+            Pehchan
           </Text>
         </View>
 

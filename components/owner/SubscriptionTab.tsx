@@ -30,11 +30,11 @@ const SubscriptionTab = () => (
           <Ionicons name="time" size={24} color={Colors.accent} />
         </View>
         <View>
-          <Text style={tabStyles.timerValue}>365 Days Left</Text>
+          <Text style={tabStyles.timerValue}>270 Days Left</Text>
           <Text style={tabStyles.timerSub}>Valid until Mar 15, 2027</Text>
         </View>
       </View>
-      
+
       <View style={tabStyles.progressContainer}>
         <View style={tabStyles.progressTrack}>
           <View style={[tabStyles.progressBar, { width: '85%' }]} />

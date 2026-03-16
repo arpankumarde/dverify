@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import tabStyles from './shared/tabStyles';
@@ -44,6 +44,24 @@ const VerificationTab = () => {
   const [purposeFocused, setPurposeFocused] = useState(false);
   const [purpose, setPurpose] = useState('');
   const [currentType, setCurrentType] = useState<'family' | 'couple' | 'pro' | 'student'>('family');
+  const [verifiedGuests, setVerifiedGuests] = useState<Array<{ name: string; dob: string; phone: string; idNumber: string; idType: string }>>([]);
+
+  useEffect(() => {
+    const backAction = () => {
+      if (step !== 'choose') {
+        setStep('choose');
+        return true; // Prevent default behavior
+      }
+      return false; // Let default behavior happen (exit app or go back in nav)
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [step]);
 
   const reset = () => {
     setStep('choose');
@@ -52,6 +70,26 @@ const VerificationTab = () => {
     setWorkId(''); setWorkIdType(''); setWorkplace(''); setOccupation('');
     setStudentId(''); setStudentIdType(''); setInstitution(''); setRollNo('');
     setPurpose('');
+    setPurpose('');
+    setVerifiedGuests([]);
+  };
+
+  const generateMockDetails = (guestIds: Array<{ id: string; type: string }>) => {
+    const names = ['Arjun Malhotra', 'Priya Sharma', 'Rahul Verma', 'Sneha Kapoor', 'Ananya Iyer', 'Rohan Gupta'];
+    const dobs = ['15-08-1995', '22-11-1998', '05-03-2000', '12-12-1992', '10-06-1997', '30-01-1994'];
+    const phones = ['+91 98765 43210', '+91 87654 32109', '+91 76543 21098', '+91 65432 10987', '+91 91234 56789', '+91 82345 67890'];
+    
+    const guests = guestIds.map((item, i) => {
+      const idx = (Math.floor(Math.random() * names.length) + i) % names.length;
+      return {
+        name: names[idx],
+        dob: dobs[idx],
+        phone: phones[idx],
+        idNumber: item.id || `VERIFIED-00${i + 1}`,
+        idType: item.type || 'ID'
+      };
+    });
+    setVerifiedGuests(guests);
   };
 
   const handleSubmit = () => {
@@ -66,13 +104,22 @@ const VerificationTab = () => {
     if (step === 'pro') {
       if (!workIdType) { Alert.alert('Validation', 'Please select an ID type.'); return; }
       if (workId.length < 4) { Alert.alert('Validation', 'Please enter a valid ID Number.'); return; }
-      if (!workplace.trim()) { Alert.alert('Validation', 'Please enter workplace name.'); return; }
     }
     if (step === 'student') {
       if (!studentIdType) { Alert.alert('Validation', 'Please select an ID type.'); return; }
       if (studentId.length < 4) { Alert.alert('Validation', 'Please enter a valid ID Number.'); return; }
-      if (!institution.trim()) { Alert.alert('Validation', 'Please enter institution name.'); return; }
     }
+
+    let ids: Array<{ id: string; type: string }> = [];
+    if (step === 'family') ids = [{ id: primaryId, type: ID_TYPES.find(t => t.key === primaryIdType)?.label || '' }];
+    if (step === 'couple') ids = [
+      { id: id1, type: ID_TYPES.find(t => t.key === id1Type)?.label || '' },
+      { id: id2, type: ID_TYPES.find(t => t.key === id2Type)?.label || '' }
+    ];
+    if (step === 'pro') ids = [{ id: workId, type: ID_TYPES.find(t => t.key === workIdType)?.label || '' }];
+    if (step === 'student') ids = [{ id: studentId, type: ID_TYPES.find(t => t.key === studentIdType)?.label || '' }];
+
+    generateMockDetails(ids);
     setStep('done');
   };
 
@@ -95,11 +142,60 @@ const VerificationTab = () => {
           <Ionicons name="checkmark-circle" size={60} color="#10B981" />
         </View>
         <Text style={tabStyles.doneTitle}>Verification Successful</Text>
+        
+        <ScrollView style={{ width: '100%', maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+          {verifiedGuests.map((guest, idx) => (
+            <View key={idx} style={{ marginBottom: 10 }}>
+              {currentType === 'couple' && (
+                <Text style={tabStyles.guestLabel}>Guest {idx + 1}</Text>
+              )}
+              <View style={tabStyles.detailCard}>
+                <View style={tabStyles.detailRow}>
+                  <View style={[tabStyles.detailIconWrap, { backgroundColor: '#EDE9FE' }]}>
+                    <Ionicons name="person" size={18} color={Colors.accent} />
+                  </View>
+                  <View>
+                    <Text style={tabStyles.detailLabel}>Full Name</Text>
+                    <Text style={tabStyles.detailValue}>{guest.name}</Text>
+                  </View>
+                </View>
+                <View style={tabStyles.detailRow}>
+                  <View style={[tabStyles.detailIconWrap, { backgroundColor: '#E0F2FE' }]}>
+                    <Ionicons name="calendar" size={18} color="#0EA5E9" />
+                  </View>
+                  <View>
+                    <Text style={tabStyles.detailLabel}>Date of Birth</Text>
+                    <Text style={tabStyles.detailValue}>{guest.dob}</Text>
+                  </View>
+                </View>
+                <View style={tabStyles.detailRow}>
+                  <View style={[tabStyles.detailIconWrap, { backgroundColor: '#D1FAE5' }]}>
+                    <Ionicons name="call" size={18} color="#10B981" />
+                  </View>
+                  <View>
+                    <Text style={tabStyles.detailLabel}>Phone Number</Text>
+                    <Text style={tabStyles.detailValue}>{guest.phone}</Text>
+                  </View>
+                </View>
+                <View style={[tabStyles.detailRow, { borderBottomWidth: 0 }]}>
+                  <View style={[tabStyles.detailIconWrap, { backgroundColor: '#F3F4F6' }]}>
+                    <Ionicons name="card" size={18} color={Colors.heading} />
+                  </View>
+                  <View>
+                    <Text style={tabStyles.detailLabel}>Verified ID Number ({guest.idType})</Text>
+                    <Text style={tabStyles.detailValue}>{guest.idNumber}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
         <Text style={tabStyles.doneBody}>
           {currentType === 'family' && `Family checked in — ${adults} adult${adults > 1 ? 's' : ''}, ${children} child${children !== 1 ? 'ren' : ''}.`}
           {currentType === 'couple' && 'Couple successfully verified and checked in.'}
-          {currentType === 'pro' && `Professional verified — ${occupation} at ${workplace}.`}
-          {currentType === 'student' && `Student verified — ${institution}.`}
+          {currentType === 'pro' && `Professional verified successfully.`}
+          {currentType === 'student' && `Student verified successfully.`}
         </Text>
         <TouchableOpacity style={tabStyles.newVerifyBtn} onPress={reset} activeOpacity={0.85}>
           <Ionicons name="add-circle-outline" size={20} color="#fff" />
@@ -231,7 +327,7 @@ const VerificationTab = () => {
         </View>
 
         {/* Purpose of Visit */}
-        <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT</Text>
+        <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT (OPTIONAL)</Text>
         <View style={[tabStyles.inputRow, purposeFocused && { borderColor: Colors.accent }]}>
           <Ionicons name="document-text-outline" size={18} color={purposeFocused ? Colors.accent : '#9CA3AF'} style={{ marginRight: 10 }} />
           <TextInput
@@ -272,10 +368,10 @@ const VerificationTab = () => {
         <IdTypeSelector selected={workIdType} onSelect={setWorkIdType} activeColor="#0EA5E9" />
 
         {/* ID Number */}
-        <Text style={tabStyles.fieldLabel}>WORK ID NUMBER</Text>
+        <Text style={tabStyles.fieldLabel}>GOV ID NUMBER</Text>
         <View style={[tabStyles.inputRow, proIdFocused && { borderColor: '#0EA5E9' }]}>
           <Ionicons
-            name={workIdType ? (ID_TYPES.find(t => t.key === workIdType)?.icon as any ?? 'briefcase-outline') : 'briefcase-outline'}
+            name={workIdType ? (ID_TYPES.find(t => t.key === workIdType)?.icon as any ?? 'card-outline') : 'card-outline'}
             size={18}
             color={proIdFocused ? '#0EA5E9' : '#9CA3AF'}
             style={{ marginRight: 10 }}
@@ -292,38 +388,9 @@ const VerificationTab = () => {
             autoCapitalize="characters"
           />
         </View>
-        {/* Workplace */}
-        <Text style={tabStyles.fieldLabel}>WORKPLACE / COMPANY NAME</Text>
-        <View style={[tabStyles.inputRow, workplaceFocused && { borderColor: '#0EA5E9' }]}>
-          <Ionicons name="business-outline" size={18} color={workplaceFocused ? '#0EA5E9' : '#9CA3AF'} style={{ marginRight: 10 }} />
-          <TextInput
-            style={tabStyles.input}
-            placeholder="e.g. Google, TCS, Hospital Name"
-            placeholderTextColor="#C4C9D4"
-            value={workplace}
-            onChangeText={setWorkplace}
-            onFocus={() => setWorkplaceFocused(true)}
-            onBlur={() => setWorkplaceFocused(false)}
-          />
-        </View>
-
-        {/* Occupation */}
-        <Text style={tabStyles.fieldLabel}>OCCUPATION / DESIGNATION</Text>
-        <View style={[tabStyles.inputRow, occupationFocused && { borderColor: '#0EA5E9' }]}>
-          <Ionicons name="person-outline" size={18} color={occupationFocused ? '#0EA5E9' : '#9CA3AF'} style={{ marginRight: 10 }} />
-          <TextInput
-            style={tabStyles.input}
-            placeholder="e.g. Manager, Doctor, Engineer"
-            placeholderTextColor="#C4C9D4"
-            value={occupation}
-            onChangeText={setOccupation}
-            onFocus={() => setOccupationFocused(true)}
-            onBlur={() => setOccupationFocused(false)}
-          />
-        </View>
 
         {/* Purpose of Visit */}
-        <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT</Text>
+        <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT (OPTIONAL)</Text>
         <View style={[tabStyles.inputRow, purposeFocused && { borderColor: '#0EA5E9' }]}>
           <Ionicons name="document-text-outline" size={18} color={purposeFocused ? '#0EA5E9' : '#9CA3AF'} style={{ marginRight: 10 }} />
           <TextInput
@@ -357,10 +424,10 @@ const VerificationTab = () => {
         <IdTypeSelector selected={studentIdType} onSelect={setStudentIdType} activeColor="#D97706" />
 
         {/* ID Number */}
-        <Text style={tabStyles.fieldLabel}>STUDENT ID NUMBER</Text>
+        <Text style={tabStyles.fieldLabel}>GOV ID NUMBER</Text>
         <View style={[tabStyles.inputRow, studentIdFocused && { borderColor: '#D97706' }]}>
           <Ionicons
-            name={studentIdType ? (ID_TYPES.find(t => t.key === studentIdType)?.icon as any ?? 'school-outline') : 'school-outline'}
+            name={studentIdType ? (ID_TYPES.find(t => t.key === studentIdType)?.icon as any ?? 'card-outline') : 'card-outline'}
             size={18}
             color={studentIdFocused ? '#D97706' : '#9CA3AF'}
             style={{ marginRight: 10 }}
@@ -378,38 +445,8 @@ const VerificationTab = () => {
           />
         </View>
 
-        {/* Institution */}
-        <Text style={tabStyles.fieldLabel}>SCHOOL / COLLEGE / UNIVERSITY</Text>
-        <View style={[tabStyles.inputRow, institutionFocused && { borderColor: '#D97706' }]}>
-          <Ionicons name="school-outline" size={18} color={institutionFocused ? '#D97706' : '#9CA3AF'} style={{ marginRight: 10 }} />
-          <TextInput
-            style={tabStyles.input}
-            placeholder="Name of your institution"
-            placeholderTextColor="#C4C9D4"
-            value={institution}
-            onChangeText={setInstitution}
-            onFocus={() => setInstitutionFocused(true)}
-            onBlur={() => setInstitutionFocused(false)}
-          />
-        </View>
-
-        {/* Roll No */}
-        <Text style={tabStyles.fieldLabel}>ROLL NO / STUDENT ID (OPTIONAL)</Text>
-        <View style={[tabStyles.inputRow, rollNoFocused && { borderColor: '#D97706' }]}>
-          <Ionicons name="barcode-outline" size={18} color={rollNoFocused ? '#D97706' : '#9CA3AF'} style={{ marginRight: 10 }} />
-          <TextInput
-            style={tabStyles.input}
-            placeholder="Your roll number"
-            placeholderTextColor="#C4C9D4"
-            value={rollNo}
-            onChangeText={setRollNo}
-            onFocus={() => setRollNoFocused(true)}
-            onBlur={() => setRollNoFocused(false)}
-          />
-        </View>
-
         {/* Purpose of Visit */}
-        <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT</Text>
+        <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT (OPTIONAL)</Text>
         <View style={[tabStyles.inputRow, purposeFocused && { borderColor: '#D97706' }]}>
           <Ionicons name="document-text-outline" size={18} color={purposeFocused ? '#D97706' : '#9CA3AF'} style={{ marginRight: 10 }} />
           <TextInput
@@ -482,7 +519,7 @@ const VerificationTab = () => {
       </View>
 
       {/* Purpose of Visit */}
-      <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT</Text>
+      <Text style={tabStyles.fieldLabel}>PURPOSE OF VISIT (OPTIONAL)</Text>
       <View style={[tabStyles.inputRow, purposeFocused && { borderColor: '#DB2777' }]}>
         <Ionicons name="document-text-outline" size={18} color={purposeFocused ? '#DB2777' : '#9CA3AF'} style={{ marginRight: 10 }} />
         <TextInput
