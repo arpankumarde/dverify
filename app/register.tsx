@@ -47,7 +47,8 @@ const addHotelStepTitles: Record<number, { subtitle: string; title: string }> = 
 export default function Register() {
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
-  const isAddingHotel = isAuthenticated;
+  // Lock at mount — don't let login() mid-flow change the step layout
+  const [isAddingHotel] = useState(isAuthenticated);
   const scrollRef = useRef<ScrollView>(null);
   const [step, setStep] = useState(isAddingHotel ? 2 : 0);
   const [loading, setLoading] = useState(false);

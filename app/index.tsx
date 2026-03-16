@@ -56,15 +56,14 @@ export default function Index() {
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatRef = useRef<FlatList>(null);
   const router = useRouter();
-
-  if (isAuthenticated) {
-    return <Redirect href={role === 'manager' ? '/manager-dashboard' : '/hotels'} />;
-  }
-
   const onViewRef = useRef(({ viewableItems }: any) => {
     if (viewableItems[0]) setCurrentIndex(viewableItems[0].index);
   });
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+
+  if (isAuthenticated) {
+    return <Redirect href={role === 'manager' ? '/manager-dashboard' : '/hotels'} />;
+  }
 
   const goNext = () => {
     if (currentIndex < slides.length - 1) {
