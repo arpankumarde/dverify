@@ -100,7 +100,7 @@ export default function HotelDetailScreen() {
       {/* Tab Content */}
       <View style={{ flex: 1 }}>
         {activeTab === 'details' && <HotelDetailsTab params={params} />}
-        {activeTab === 'managers' && <ManagersTab managers={managers} />}
+        {activeTab === 'managers' && <ManagersTab managers={managers} hotelId={hotelId} onManagerAdded={fetchData} />}
         {activeTab === 'logs' && <LogsTab verifications={verifications} />}
         {activeTab === 'subscription' && <SubscriptionTab subscription={hotel?.subscriptions?.[0] || null} />}
       </View>
