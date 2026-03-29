@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -110,9 +111,11 @@ export default function LoginScreen() {
 
           {/* Header */}
           <View style={styles.headerBlock}>
-            <View style={styles.logoWrap}>
-              <Ionicons name="finger-print" size={26} color="#fff" />
-            </View>
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.welcomeLabel}>WELCOME BACK</Text>
             <Text style={styles.heading}>
               {step === 'phone' ? 'Sign in to\nyour account' : 'Verify\nOTP'}
@@ -281,19 +284,10 @@ const styles = StyleSheet.create({
     marginTop: 28,
     marginBottom: 32,
   },
-  logoWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 60,
+    height: 60,
     marginBottom: 20,
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
   },
   welcomeLabel: {
     fontSize: 11,

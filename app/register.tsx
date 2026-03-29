@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -228,9 +229,11 @@ export default function Register() {
               {(isAddingHotel ? addHotelStepTitles[step] : fullStepTitles[step]).title}
             </Text>
           </View>
-          <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="finger-print" size={18} color="#fff" />
-          </View>
+          <Image
+            source={require('../assets/images/icon.png')}
+            style={{ width: 38, height: 38 }}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Step Indicator */}

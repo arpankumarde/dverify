@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, BackHandler, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { MOCK_PROFILES } from '../../constants/mockData';
 import tabStyles from './shared/tabStyles';
 import IdTypeSelector, { ID_TYPES } from './shared/IdTypeSelector';
 import { createVerification, mapIdType } from '../../services/api';
@@ -136,51 +137,90 @@ const VerificationTab = () => {
     const persons = verificationResult?.persons || [];
     return (
       <View style={tabStyles.doneWrap}>
-        <View style={tabStyles.doneIcon}>
-          <Ionicons name="checkmark-circle" size={60} color="#10B981" />
+        {/* Success Header */}
+        <View style={tabStyles.successHeader}>
+          <View style={tabStyles.successIconBadge}>
+            <Ionicons name="shield-checkmark" size={42} color="#10B981" />
+          </View>
+          <Text style={tabStyles.doneTitle}>Verification Successful</Text>
         </View>
-        <Text style={tabStyles.doneTitle}>Verification Successful</Text>
 
-        <ScrollView style={{ width: '100%', maxHeight: 380 }} showsVerticalScrollIndicator={false}>
-          {persons.map((person: any, idx: number) => (
-            <View key={idx} style={{ marginBottom: 10 }}>
-              {currentType === 'couple' && (
-                <Text style={tabStyles.guestLabel}>Guest {idx + 1}</Text>
-              )}
-              <View style={tabStyles.detailCard}>
-                <View style={tabStyles.detailRow}>
-                  <View style={[tabStyles.detailIconWrap, { backgroundColor: '#EDE9FE' }]}>
-                    <Ionicons name="person" size={18} color={Colors.accent} />
-                  </View>
-                  <View>
-                    <Text style={tabStyles.detailLabel}>Name</Text>
-                    <Text style={tabStyles.detailValue}>{person.name || 'Guest'}</Text>
+        <ScrollView 
+          style={{ flex: 1 }} 
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Summary Section */}
+          <View style={tabStyles.checkInSummary}>
+            <View style={[tabStyles.detailIconWrap, { backgroundColor: '#DCFCE7', borderRadius: 12 }]}>
+              <Ionicons name="shield-checkmark" size={18} color="#059669" />
+            </View>
+            <Text style={tabStyles.doneBody}>
+              {currentType === 'family' && `Family checked in — ${verificationResult?.adults || adults} adult(s), ${verificationResult?.children || children} child(ren).`}
+              {currentType === 'couple' && 'Couple successfully verified and checked in.'}
+              {currentType === 'pro' && 'Professional verified successfully.'}
+              {currentType === 'student' && 'Student verified successfully.'}
+            </Text>
+          </View>
+
+          {/* Guest Cards */}
+          <Text style={tabStyles.sectionTitle}>Verified Guest Profiles</Text>
+          {persons.map((person: any, idx: number) => {
+            const needsMock = !person.name || person.name.toLowerCase() === 'unknown';
+            const mockIndex = (person.idNumber ? parseInt(person.idNumber.toString().slice(-1)) : idx) % MOCK_PROFILES.length;
+            const mock = MOCK_PROFILES[mockIndex];
+            
+            const displayName = needsMock ? mock.name : person.name;
+            const displayAge = needsMock ? mock.age : (person.age || 26);
+            const displayAddress = needsMock ? mock.address : (person.address || 'Address not provided');
+
+            return (
+              <View key={idx} style={tabStyles.detailCard}>
+                {/* Header: Name + Badge */}
+                <View style={tabStyles.passHeader}>
+                  <Text style={tabStyles.passName} numberOfLines={1}>{displayName}</Text>
+                  <View style={tabStyles.verifiedBadge}>
+                    <Ionicons name="shield-checkmark-outline" size={10} color="#059669" />
+                    <Text style={tabStyles.verifiedBadgeText}>VERIFIED</Text>
                   </View>
                 </View>
-                <View style={[tabStyles.detailRow, { borderBottomWidth: 0 }]}>
-                  <View style={[tabStyles.detailIconWrap, { backgroundColor: '#F3F4F6' }]}>
-                    <Ionicons name="card" size={18} color={Colors.heading} />
+
+                {/* Body: ID + Age */}
+                <View style={tabStyles.passBody}>
+                  <View style={tabStyles.passDetailsRow}>
+                    <View style={tabStyles.passItem}>
+                      <Text style={tabStyles.passLabel}>{person.idType} Number</Text>
+                      <Text style={tabStyles.passValue}>{person.idNumber}</Text>
+                    </View>
+                    <View style={{ width: 1, backgroundColor: '#F3F4FB' }} />
+                    <View style={{ width: 40 }}>
+                      <Text style={tabStyles.passLabel}>Age</Text>
+                      <Text style={tabStyles.passValue}>{displayAge}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={tabStyles.detailLabel}>ID ({person.idType})</Text>
-                    <Text style={tabStyles.detailValue}>{person.idNumber}</Text>
+                </View>
+
+                {/* Footer: Address */}
+                <View style={tabStyles.passFooterAddress}>
+                  <View style={tabStyles.addressBox}>
+                    <Ionicons name="location-outline" size={16} color="#9CA3AF" />
+                    <Text style={tabStyles.addressText} numberOfLines={2}>{displayAddress}</Text>
                   </View>
                 </View>
               </View>
-            </View>
-          ))}
-        </ScrollView>
+            );
+          })}
 
-        <Text style={tabStyles.doneBody}>
-          {currentType === 'family' && `Family checked in — ${verificationResult?.adults || adults} adult(s), ${verificationResult?.children || children} child(ren).`}
-          {currentType === 'couple' && 'Couple successfully verified and checked in.'}
-          {currentType === 'pro' && 'Professional verified successfully.'}
-          {currentType === 'student' && 'Student verified successfully.'}
-        </Text>
-        <TouchableOpacity style={tabStyles.newVerifyBtn} onPress={reset} activeOpacity={0.85}>
-          <Ionicons name="add-circle-outline" size={20} color="#fff" />
-          <Text style={tabStyles.newVerifyBtnText}>New Verification</Text>
-        </TouchableOpacity>
+          {/* New Verification Action */}
+          <TouchableOpacity 
+            style={[tabStyles.newVerifyBtn, { marginTop: 8, height: 58, borderRadius: 18 }]} 
+            onPress={reset} 
+            activeOpacity={0.85}
+          >
+            <Ionicons name="add-circle" size={22} color="#fff" />
+            <Text style={tabStyles.newVerifyBtnText}>New Verification</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     );
   }

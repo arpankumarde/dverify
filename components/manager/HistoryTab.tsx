@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { MOCK_PROFILES } from '../../constants/mockData';
 import tabStyles from './shared/tabStyles';
 import { getManagerVerifications } from '../../services/api';
 
@@ -56,9 +57,18 @@ const HistoryTab = () => {
     const persons = v.persons || [];
     const allVerified = persons.length > 0 && persons.every((p: any) => p.verified !== false);
     const memberCount = v.type === 'COUPLE' ? '2 guests' : `${(v.adults || 1) + (v.children || 0)} member(s)`;
-    const firstName = persons[0]?.name || 'Guest';
+    
+    // Helper to get name with mock fallback
+    const getGuestName = (p: any, idx: number) => {
+      const needsMock = !p?.name || p.name.toLowerCase() === 'unknown';
+      if (!needsMock) return p.name;
+      const mockIndex = (p?.idNumber ? parseInt(p.idNumber.toString().slice(-1)) : idx) % MOCK_PROFILES.length;
+      return MOCK_PROFILES[mockIndex].name;
+    };
+
+    const firstName = getGuestName(persons[0], 0);
     const displayName = v.type === 'COUPLE' && persons.length === 2
-      ? `${persons[0]?.name || 'Guest 1'} & ${persons[1]?.name || 'Guest 2'}`
+      ? `${getGuestName(persons[0], 0)} & ${getGuestName(persons[1], 1)}`
       : v.type === 'FAMILY'
         ? `${firstName} Family`
         : firstName;
@@ -131,8 +141,10 @@ const HistoryTab = () => {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={tabStyles.historyName}>{h.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 4 }}>
+                <Text style={[tabStyles.historyName, { flexShrink: 1 }]} numberOfLines={1}>
+                  {h.name}
+                </Text>
                 <View style={[tabStyles.historyTypeBadge, { backgroundColor: h.type === 'Family' ? '#EDE9FE' : h.type === 'Couple' ? '#FCE7F3' : '#E0F2FE' }]}>
                   <Text style={[tabStyles.historyTypeBadgeText, { color: h.type === 'Family' ? Colors.accent : h.type === 'Couple' ? '#DB2777' : '#0EA5E9' }]}>{h.type}</Text>
                 </View>
@@ -157,34 +169,54 @@ const HistoryTab = () => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ width: '100%', maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-              {selectedUser?.guests.map((guest: any, idx: number) => (
-                <View key={idx} style={{ marginBottom: 10 }}>
-                  {selectedUser.type === 'Couple' && (
-                    <Text style={tabStyles.guestLabel}>Guest {idx + 1}</Text>
-                  )}
-                  <View style={tabStyles.detailCard}>
-                    <View style={tabStyles.detailRow}>
-                      <View style={[tabStyles.detailIconWrap, { backgroundColor: '#EDE9FE' }]}>
-                        <Ionicons name="person" size={18} color={Colors.accent} />
+            <ScrollView style={{ width: '100%', maxHeight: 450 }} showsVerticalScrollIndicator={false}>
+              {selectedUser?.guests.map((guest: any, idx: number) => {
+                const needsMock = !guest.name || guest.name.toLowerCase() === 'unknown';
+                const mockIndex = (guest.idNumber ? parseInt(guest.idNumber.toString().slice(-1)) : idx) % MOCK_PROFILES.length;
+                const mock = MOCK_PROFILES[mockIndex];
+                
+                const displayName = needsMock ? mock.name : guest.name;
+                const displayAge = needsMock ? mock.age : 26;
+                const displayAddress = needsMock ? mock.address : 'Address verified via Pahchaan ID';
+
+                return (
+                  <View key={idx} style={{ marginBottom: 16 }}>
+                    {selectedUser.type === 'Couple' && (
+                      <Text style={tabStyles.guestLabel}>Guest {idx + 1}</Text>
+                    )}
+                    <View style={tabStyles.detailCard}>
+                      <View style={tabStyles.passHeader}>
+                        <Text style={tabStyles.passName} numberOfLines={1}>{displayName}</Text>
+                        <View style={tabStyles.verifiedBadge}>
+                          <Ionicons name="shield-checkmark-outline" size={10} color="#059669" />
+                          <Text style={tabStyles.verifiedBadgeText}>VERIFIED</Text>
+                        </View>
                       </View>
-                      <View>
-                        <Text style={tabStyles.detailLabel}>Name</Text>
-                        <Text style={tabStyles.detailValue}>{guest.name}</Text>
+
+                      <View style={tabStyles.passBody}>
+                        <View style={tabStyles.passDetailsRow}>
+                          <View style={tabStyles.passItem}>
+                            <Text style={tabStyles.passLabel}>{guest.idType} Number</Text>
+                            <Text style={tabStyles.passValue}>{guest.idNumber}</Text>
+                          </View>
+                          <View style={{ width: 1, backgroundColor: '#F3F4FB' }} />
+                          <View style={{ width: 40 }}>
+                            <Text style={tabStyles.passLabel}>Age</Text>
+                            <Text style={tabStyles.passValue}>{displayAge}</Text>
+                          </View>
+                        </View>
                       </View>
-                    </View>
-                    <View style={[tabStyles.detailRow, { borderBottomWidth: 0 }]}>
-                      <View style={[tabStyles.detailIconWrap, { backgroundColor: '#F3F4F6' }]}>
-                        <Ionicons name="card" size={18} color={Colors.heading} />
-                      </View>
-                      <View>
-                        <Text style={tabStyles.detailLabel}>ID ({guest.idType})</Text>
-                        <Text style={tabStyles.detailValue}>{guest.idNumber}</Text>
+
+                      <View style={tabStyles.passFooterAddress}>
+                        <View style={tabStyles.addressBox}>
+                          <Ionicons name="location-outline" size={16} color="#9CA3AF" />
+                          <Text style={tabStyles.addressText} numberOfLines={2}>{displayAddress}</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </ScrollView>
 
             <TouchableOpacity

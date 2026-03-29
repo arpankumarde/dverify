@@ -10,6 +10,7 @@ import {
   StatusBar,
   Modal,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Redirect } from 'expo-router';
@@ -82,14 +83,13 @@ export default function Index() {
       {/* ── Top bar ─────────────────────────── */}
       <View className="flex-row justify-between items-center px-8 pt-4">
         <View className="flex-row items-center gap-2">
-          <View
-            className="w-8 h-8 rounded-xl items-center justify-center"
-            style={{ backgroundColor: Colors.accent }}
-          >
-            <Ionicons name="finger-print" size={18} color="#fff" />
-          </View>
-          <Text className="text-base font-black tracking-widest" style={{ color: Colors.heading }}>
-            Pehchan
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={{ width: 38, height: 38 }}
+              resizeMode="contain"
+            />
+          <Text className="text-xl font-black tracking-widest" style={{ color: Colors.heading }}>
+            Pahchaan ID
           </Text>
         </View>
 
@@ -184,7 +184,7 @@ export default function Index() {
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
-          <Text style={styles.sheetTitle}>Welcome to Pehchan</Text>
+          <Text style={styles.sheetTitle}>Welcome to Pahchaan ID</Text>
           <Text style={styles.sheetSubtitle}>New user or already have an account?</Text>
 
           {/* Register */}

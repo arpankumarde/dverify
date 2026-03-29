@@ -6,6 +6,7 @@ import {
   StatusBar,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,9 +93,11 @@ export default function HotelDetailScreen() {
           <Text style={styles.headerSub}>Hotel</Text>
           <Text style={styles.headerTitle} numberOfLines={1}>{hotelName}</Text>
         </View>
-        <View style={styles.headerIcon}>
-          <Ionicons name="finger-print" size={20} color="#fff" />
-        </View>
+        <Image
+          source={require('../assets/images/icon.png')}
+          style={{ width: 38, height: 38 }}
+          resizeMode="contain"
+        />
       </View>
 
       {/* Tab Content */}

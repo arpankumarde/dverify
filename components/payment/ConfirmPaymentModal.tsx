@@ -34,7 +34,7 @@ const ConfirmPaymentModal: React.FC<ConfirmPaymentModalProps> = ({
           <Text style={styles.title}>Confirm Payment</Text>
           <Text style={styles.subtitle}>
             You are about to activate your{'\n'}
-            <Text style={{ fontWeight: '900', color: Colors.accent }}>Pehchan ID Pro Plan</Text>
+            <Text style={{ fontWeight: '900', color: Colors.accent }}>Pahchaan ID Pro Plan</Text>
           </Text>
 
           {/* Summary Card */}
