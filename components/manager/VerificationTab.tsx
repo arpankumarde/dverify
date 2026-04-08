@@ -166,13 +166,15 @@ const VerificationTab = () => {
           {/* Guest Cards */}
           <Text style={tabStyles.sectionTitle}>Verified Guest Profiles</Text>
           {persons.map((person: any, idx: number) => {
-            const needsMock = !person.name || person.name.toLowerCase() === 'unknown';
-            const mockIndex = (person.idNumber ? parseInt(person.idNumber.toString().slice(-1)) : idx) % MOCK_PROFILES.length;
+            const name = person?.name || '';
+            const needsMock = !name || name.toLowerCase() === 'unknown';
+            const idStr = person?.idNumber?.toString() || '';
+            const mockIndex = (idStr ? parseInt(idStr.slice(-1)) : idx) % MOCK_PROFILES.length;
             const mock = MOCK_PROFILES[mockIndex];
             
-            const displayName = needsMock ? mock.name : person.name;
-            const displayAge = needsMock ? mock.age : (person.age || 26);
-            const displayAddress = needsMock ? mock.address : (person.address || 'Address not provided');
+            const displayName = needsMock ? mock.name : name;
+            const displayAge = needsMock ? mock.age : (person?.age || 26);
+            const displayAddress = needsMock ? mock.address : (person?.address || 'Address not provided');
 
             return (
               <View key={idx} style={tabStyles.detailCard}>
@@ -189,8 +191,8 @@ const VerificationTab = () => {
                 <View style={tabStyles.passBody}>
                   <View style={tabStyles.passDetailsRow}>
                     <View style={tabStyles.passItem}>
-                      <Text style={tabStyles.passLabel}>{person.idType} Number</Text>
-                      <Text style={tabStyles.passValue}>{person.idNumber}</Text>
+                      <Text style={tabStyles.passLabel}>{person?.idType} Number</Text>
+                      <Text style={tabStyles.passValue}>{person?.idNumber}</Text>
                     </View>
                     <View style={{ width: 1, backgroundColor: '#F3F4FB' }} />
                     <View style={{ width: 40 }}>

@@ -52,40 +52,47 @@ const HistoryTab = () => {
     })();
   }, []);
 
-  const history = verifications.map((v) => {
-    const label = typeLabel(v.type);
-    const persons = v.persons || [];
-    const allVerified = persons.length > 0 && persons.every((p: any) => p.verified !== false);
-    const memberCount = v.type === 'COUPLE' ? '2 guests' : `${(v.adults || 1) + (v.children || 0)} member(s)`;
+  const history = verifications.map((v: any) => {
+    const label = typeLabel(v?.type || '');
+    const persons = Array.isArray(v?.persons) ? v.persons.filter((p: any) => p) : [];
+    const allVerified = persons.length > 0 && persons.every((p: any) => p?.verified !== false);
+    const memberCount = v?.type === 'COUPLE' ? '2 guests' : `${(v?.adults || 1) + (v?.children || 0)} member(s)`;
     
-    // Helper to get name with mock fallback
-    const getGuestName = (p: any, idx: number) => {
-      const needsMock = !p?.name || p.name.toLowerCase() === 'unknown';
-      if (!needsMock) return p.name;
-      const mockIndex = (p?.idNumber ? parseInt(p.idNumber.toString().slice(-1)) : idx) % MOCK_PROFILES.length;
-      return MOCK_PROFILES[mockIndex].name;
+    // Helper to get name with mock fallback (null-safe)
+    const getGuestName = (p: any, idx: number): string => {
+      // Handle undefined or null person
+      if (!p) {
+        const mockIndex = Math.max(0, idx % Math.max(1, MOCK_PROFILES.length));
+        return MOCK_PROFILES[mockIndex]?.name || 'Guest';
+      }
+      const name = p?.name || '';
+      const needsMock = !name || name.toLowerCase() === 'unknown';
+      if (!needsMock) return name;
+      const idStr = p?.idNumber?.toString() || '';
+      const mockIndex = (idStr ? parseInt(idStr.slice(-1)) : idx) % Math.max(1, MOCK_PROFILES.length);
+      return MOCK_PROFILES[mockIndex]?.name || 'Guest';
     };
 
-    const firstName = getGuestName(persons[0], 0);
-    const displayName = v.type === 'COUPLE' && persons.length === 2
-      ? `${getGuestName(persons[0], 0)} & ${getGuestName(persons[1], 1)}`
-      : v.type === 'FAMILY'
+    const firstName = persons.length > 0 ? getGuestName(persons[0], 0) : getGuestName(null, 0);
+    const displayName = (v?.type === 'COUPLE' && persons.length >= 2)
+      ? `${getGuestName(persons[0], 0)} & ${getGuestName(persons[1] || null, 1)}`
+      : v?.type === 'FAMILY'
         ? `${firstName} Family`
-        : firstName;
+        : firstName || 'Guest';
 
     return {
-      id: v.id,
-      name: displayName,
-      type: label,
-      members: memberCount,
-      time: formatTime(v.createdAt),
+      id: v?.id || '',
+      name: displayName || 'Guest',
+      type: label || 'Unknown',
+      members: memberCount || '0 members',
+      time: formatTime(v?.createdAt || new Date().toISOString()),
       status: allVerified ? 'verified' : 'failed',
-      guests: persons.map((p: any) => ({
-        name: p.name || 'Guest',
-        idNumber: p.idNumber,
-        idType: idTypeLabel(p.idType),
-        verified: p.verified,
-      })),
+      guests: Array.isArray(persons) ? persons.map((p: any) => ({
+        name: p?.name || 'Guest',
+        idNumber: p?.idNumber,
+        idType: idTypeLabel(p?.idType || ''),
+        verified: p?.verified,
+      })) : [],
     };
   });
 
@@ -170,18 +177,20 @@ const HistoryTab = () => {
             </View>
 
             <ScrollView style={{ width: '100%', maxHeight: 450 }} showsVerticalScrollIndicator={false}>
-              {selectedUser?.guests.map((guest: any, idx: number) => {
-                const needsMock = !guest.name || guest.name.toLowerCase() === 'unknown';
-                const mockIndex = (guest.idNumber ? parseInt(guest.idNumber.toString().slice(-1)) : idx) % MOCK_PROFILES.length;
-                const mock = MOCK_PROFILES[mockIndex];
+              {Array.isArray(selectedUser?.guests) ? selectedUser.guests.map((guest: any, idx: number) => {
+                const name = guest?.name || '';
+                const needsMock = !name || name.toLowerCase() === 'unknown';
+                const idStr = guest?.idNumber?.toString() || '';
+                const mockIndex = Math.max(0, (idStr ? parseInt(idStr.slice(-1)) : idx) % Math.max(1, MOCK_PROFILES.length));
+                const mock = MOCK_PROFILES[mockIndex] || { name: 'Guest', age: 26, address: 'Address not available' };
                 
-                const displayName = needsMock ? mock.name : guest.name;
-                const displayAge = needsMock ? mock.age : 26;
-                const displayAddress = needsMock ? mock.address : 'Address verified via Pahchaan ID';
+                const displayName = needsMock ? (mock?.name || 'Guest') : (name || 'Guest');
+                const displayAge = needsMock ? (mock?.age || 26) : (guest?.age || 26);
+                const displayAddress = needsMock ? (mock?.address || 'Address not available') : (guest?.address || 'Address verified via Pahchaan ID');
 
                 return (
                   <View key={idx} style={{ marginBottom: 16 }}>
-                    {selectedUser.type === 'Couple' && (
+                    {selectedUser?.type === 'Couple' && (
                       <Text style={tabStyles.guestLabel}>Guest {idx + 1}</Text>
                     )}
                     <View style={tabStyles.detailCard}>
@@ -196,8 +205,8 @@ const HistoryTab = () => {
                       <View style={tabStyles.passBody}>
                         <View style={tabStyles.passDetailsRow}>
                           <View style={tabStyles.passItem}>
-                            <Text style={tabStyles.passLabel}>{guest.idType} Number</Text>
-                            <Text style={tabStyles.passValue}>{guest.idNumber}</Text>
+                            <Text style={tabStyles.passLabel}>{guest?.idType || 'ID'} Number</Text>
+                            <Text style={tabStyles.passValue}>{guest?.idNumber || 'N/A'}</Text>
                           </View>
                           <View style={{ width: 1, backgroundColor: '#F3F4FB' }} />
                           <View style={{ width: 40 }}>
@@ -216,7 +225,7 @@ const HistoryTab = () => {
                     </View>
                   </View>
                 );
-              })}
+              }) : null}
             </ScrollView>
 
             <TouchableOpacity

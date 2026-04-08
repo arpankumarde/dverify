@@ -67,20 +67,20 @@ const ManagersTab = ({ managers, hotelId, onManagerAdded }: ManagersTabProps) =>
         ) : (
           managers.map((m) => (
             <TouchableOpacity
-              key={m.id}
+              key={m?.id}
               style={tabStyles.managerCard}
               activeOpacity={0.7}
               onPress={() => setSelected(m)}
             >
               <View style={tabStyles.managerAvatar}>
-                <Text style={tabStyles.managerAvatarText}>{(m.name || 'M')[0].toUpperCase()}</Text>
+                <Text style={tabStyles.managerAvatarText}>{(m?.name || 'M')[0].toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={tabStyles.managerName}>{m.name}</Text>
-                <Text style={tabStyles.managerMeta}>{m.phone} · Since {new Date(m.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</Text>
+                <Text style={tabStyles.managerName}>{m?.name || 'Manager'}</Text>
+                <Text style={tabStyles.managerMeta}>{m?.phone || 'N/A'} · Since {m?.createdAt ? new Date(m.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Unknown'}</Text>
               </View>
               <View style={tabStyles.activePill}>
-                <Text style={tabStyles.activePillText}>{m.hotelId ? 'Active' : 'Inactive'}</Text>
+                <Text style={tabStyles.activePillText}>{m?.hotelId ? 'Active' : 'Inactive'}</Text>
               </View>
             </TouchableOpacity>
           ))
@@ -205,26 +205,26 @@ const ManagersTab = ({ managers, hotelId, onManagerAdded }: ManagersTabProps) =>
                     alignItems: 'center', justifyContent: 'center', marginBottom: 12,
                   }}>
                     <Text style={{ fontSize: 28, fontWeight: '900', color: Colors.accent }}>
-                      {(selected.name || 'M')[0].toUpperCase()}
+                      {(selected?.name || 'M')[0].toUpperCase()}
                     </Text>
                   </View>
                   <Text style={{ fontSize: 20, fontWeight: '900', color: Colors.heading, marginBottom: 4 }}>
-                    {selected.name}
+                    {selected?.name || 'Manager'}
                   </Text>
                   <View style={{
                     flexDirection: 'row', alignItems: 'center', gap: 6,
-                    backgroundColor: selected.hotelId ? '#ECFDF5' : '#FEF3C7',
+                    backgroundColor: selected?.hotelId ? '#ECFDF5' : '#FEF3C7',
                     paddingHorizontal: 12, paddingVertical: 4, borderRadius: 99,
                   }}>
                     <View style={{
                       width: 7, height: 7, borderRadius: 4,
-                      backgroundColor: selected.hotelId ? '#059669' : '#D97706',
+                      backgroundColor: selected?.hotelId ? '#059669' : '#D97706',
                     }} />
                     <Text style={{
                       fontSize: 11, fontWeight: '800',
-                      color: selected.hotelId ? '#059669' : '#D97706',
+                      color: selected?.hotelId ? '#059669' : '#D97706',
                     }}>
-                      {selected.hotelId ? 'ACTIVE' : 'INACTIVE'}
+                      {selected?.hotelId ? 'ACTIVE' : 'INACTIVE'}
                     </Text>
                   </View>
                 </View>
@@ -235,7 +235,7 @@ const ManagersTab = ({ managers, hotelId, onManagerAdded }: ManagersTabProps) =>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={tabStyles.infoLabel}>Phone</Text>
-                    <Text style={tabStyles.infoValue}>{selected.phone}</Text>
+                    <Text style={tabStyles.infoValue}>{selected?.phone || 'N/A'}</Text>
                   </View>
                 </View>
 
@@ -246,19 +246,19 @@ const ManagersTab = ({ managers, hotelId, onManagerAdded }: ManagersTabProps) =>
                   <View style={{ flex: 1 }}>
                     <Text style={tabStyles.infoLabel}>Added On</Text>
                     <Text style={tabStyles.infoValue}>
-                      {new Date(selected.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      {selected?.createdAt ? new Date(selected.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
                     </Text>
                   </View>
                 </View>
 
-                {selected.phoneVerified !== undefined && (
+                {selected?.phoneVerified !== undefined && (
                   <View style={tabStyles.infoRow}>
                     <View style={tabStyles.infoIconWrap}>
                       <Ionicons name="shield-checkmark-outline" size={18} color={Colors.accent} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={tabStyles.infoLabel}>Phone Verified</Text>
-                      <Text style={tabStyles.infoValue}>{selected.phoneVerified ? 'Yes' : 'No'}</Text>
+                      <Text style={tabStyles.infoValue}>{selected?.phoneVerified ? 'Yes' : 'No'}</Text>
                     </View>
                   </View>
                 )}
@@ -270,7 +270,7 @@ const ManagersTab = ({ managers, hotelId, onManagerAdded }: ManagersTabProps) =>
                       height: 48, borderRadius: 14, backgroundColor: '#E0F2FE',
                     }}
                     activeOpacity={0.7}
-                    onPress={() => Linking.openURL(`tel:${selected.phone}`)}
+                    onPress={() => selected?.phone && Linking.openURL(`tel:${selected.phone}`)}
                   >
                     <Ionicons name="call" size={18} color="#0EA5E9" />
                     <Text style={{ fontSize: 14, fontWeight: '800', color: '#0EA5E9' }}>Call</Text>
@@ -282,8 +282,8 @@ const ManagersTab = ({ managers, hotelId, onManagerAdded }: ManagersTabProps) =>
                     }}
                     activeOpacity={0.7}
                     onPress={() => {
-                      const num = selected.phone.replace(/[^0-9]/g, '');
-                      Linking.openURL(`https://wa.me/${num}`);
+                      const num = (selected?.phone || '').replace(/[^0-9]/g, '');
+                      if (num) Linking.openURL(`https://wa.me/${num}`);
                     }}
                   >
                     <Ionicons name="logo-whatsapp" size={18} color="#22C55E" />

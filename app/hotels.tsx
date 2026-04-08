@@ -31,7 +31,7 @@ export default function HotelsScreen() {
     try {
       setLoading(true);
       const res = await ownerProfile();
-      const owner = res.owner;
+      const owner = res.owner || {};
       setOwnerName(owner.name || '');
       const mapped: Hotel[] = (owner.hotels || []).map((h: any) => ({
         id: h.id,
