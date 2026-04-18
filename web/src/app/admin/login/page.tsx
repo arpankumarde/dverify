@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 
-const Page = () => {
+export default function OldAdminLogin() {
   redirect("/login");
-};
-
-export default Page;
+}
